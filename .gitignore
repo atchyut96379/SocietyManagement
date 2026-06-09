@@ -316,6 +316,14 @@ paket-files/
 __pycache__/
 *.pyc
 
+# Society Management uploads
+backend/uploads/
+
+# Local environment secrets
+backend/.env
+frontend/.env
+frontend/.env.local
+
 # Cake - Uncomment if you are using it
 # tools/**
 # !tools/packages.config

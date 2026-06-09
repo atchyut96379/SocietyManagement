@@ -12,8 +12,8 @@ RESIDENT_ROLE = 2
 SECURITY_ROLE = 3
 SECRETARY_ROLE = 4
 
-MANAGEMENT_ROLES = (ADMIN_ROLE, SECRETARY_ROLE)
-STAFF_ROLES = (ADMIN_ROLE, SECRETARY_ROLE, SECURITY_ROLE)
+MANAGEMENT_ROLES = (SECRETARY_ROLE,)
+STAFF_ROLES = (SECRETARY_ROLE, SECURITY_ROLE)
 
 
 def require_admin(user=Depends(verify_token)):
@@ -25,11 +25,20 @@ def require_admin(user=Depends(verify_token)):
     return user
 
 
+def require_secretary(user=Depends(verify_token)):
+    if user.get("role_id") != SECRETARY_ROLE:
+        raise HTTPException(
+            status_code=403,
+            detail="Secretary access required"
+        )
+    return user
+
+
 def require_management(user=Depends(verify_token)):
     if user.get("role_id") not in MANAGEMENT_ROLES:
         raise HTTPException(
             status_code=403,
-            detail="Management access required"
+            detail="Secretary access required"
         )
     return user
 
@@ -49,11 +58,17 @@ def require_resident(user=Depends(verify_token)):
             status_code=403,
             detail="Resident access required"
         )
-    if not user.get("resident_id"):
+
+    from app.services.resident_resolver import resolve_resident_id
+
+    resident_id = resolve_resident_id(user)
+    if not resident_id:
         raise HTTPException(
             status_code=403,
             detail="Resident account is not linked to a flat"
         )
+
+    user["resident_id"] = resident_id
     return user
 
 

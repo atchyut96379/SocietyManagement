@@ -1,15 +1,22 @@
-from fastapi import APIRouter, Depends
+from typing import Optional
 
-from app.auth.roles import require_management, require_staff
-from app.schemas.resident_schema import ResidentCreate, ResidentUpdate
+from fastapi import APIRouter, Depends, Query
+
+from app.auth.roles import require_secretary, require_staff
+from app.services.committee_service import get_available_committee_roles
+from app.schemas.resident_schema import (
+    ResidentCreate,
+    ResidentUpdate,
+    CommitteeRoleTransfer
+)
 from app.services.resident_service import (
-    create_resident,
+    create_resident_with_login,
     get_all_residents,
     get_resident_by_id,
     delete_resident,
-    update_resident
+    update_resident,
+    transfer_committee_role
 )
-from app.services.user_service import create_resident_account_auto
 
 router = APIRouter(
     prefix="/resident",
@@ -20,22 +27,28 @@ router = APIRouter(
 @router.post("")
 def add_resident(
     resident: ResidentCreate,
-    user=Depends(require_management)
+    user=Depends(require_secretary)
 ):
-    return create_resident(resident)
+    return create_resident_with_login(resident)
 
 
 @router.get("")
-def get_residents(
-    user=Depends(require_staff)
-):
+def get_residents(user=Depends(require_staff)):
     return get_all_residents()
+
+
+@router.get("/available-committee-roles")
+def available_committee_roles(
+    editing_resident_id: Optional[int] = Query(None),
+    user=Depends(require_secretary)
+):
+    return get_available_committee_roles(editing_resident_id)
 
 
 @router.get("/{resident_id}")
 def get_resident(
     resident_id: int,
-    user=Depends(require_management)
+    user=Depends(require_secretary)
 ):
     return get_resident_by_id(resident_id)
 
@@ -44,7 +57,7 @@ def get_resident(
 def edit_resident(
     resident_id: int,
     resident: ResidentUpdate,
-    user=Depends(require_management)
+    user=Depends(require_secretary)
 ):
     return update_resident(resident_id, resident)
 
@@ -52,14 +65,15 @@ def edit_resident(
 @router.delete("/{resident_id}")
 def remove_resident(
     resident_id: int,
-    user=Depends(require_management)
+    user=Depends(require_secretary)
 ):
     return delete_resident(resident_id)
 
 
-@router.post("/{resident_id}/create-login")
-def create_login(
+@router.put("/{resident_id}/committee-role")
+def change_committee_role(
     resident_id: int,
-    user=Depends(require_management)
+    data: CommitteeRoleTransfer,
+    user=Depends(require_secretary)
 ):
-    return create_resident_account_auto(resident_id)
+    return transfer_committee_role(resident_id, data.committee_role)

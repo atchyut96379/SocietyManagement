@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.database.db import get_connection
 
@@ -18,6 +19,11 @@ from app.api.finance_api import router as finance_router
 from app.api.dashboard_api import router as dashboard_router
 from app.api.expense_api import router as expense_router
 from app.api.portal_api import router as portal_router
+from app.api.flat_api import router as flat_router
+from app.api.config_api import router as config_router
+from app.api.home_api import router as home_router
+from app.api.my_dues_api import router as my_dues_router
+from app.api.guard_api import router as guard_router
 
 load_dotenv()
 
@@ -44,6 +50,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+uploads_path = os.path.join(
+    os.path.dirname(os.path.dirname(__file__)),
+    "uploads"
+)
+os.makedirs(uploads_path, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=uploads_path), name="uploads")
+
 app.include_router(user_router)
 app.include_router(admin_router)
 app.include_router(resident_router)
@@ -56,6 +69,11 @@ app.include_router(finance_router)
 app.include_router(dashboard_router)
 app.include_router(expense_router)
 app.include_router(portal_router)
+app.include_router(flat_router)
+app.include_router(config_router)
+app.include_router(home_router)
+app.include_router(my_dues_router)
+app.include_router(guard_router)
 
 
 @app.get("/")
@@ -67,9 +85,7 @@ def root():
 
 @app.get("/test-db")
 def test_db():
-
     try:
-
         conn = get_connection()
         cursor = conn.cursor()
 
@@ -84,7 +100,6 @@ def test_db():
         }
 
     except Exception as ex:
-
         return {
             "status": "failed",
             "error": str(ex)

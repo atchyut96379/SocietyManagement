@@ -1,43 +1,7 @@
 from app.database.db import get_connection
 
 
-def get_resident_profile(resident_id: int):
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT
-            ResidentID,
-            FullName,
-            FlatNumber,
-            PhoneNumber,
-            Email,
-            TowerName,
-            IsOwner
-        FROM Residents
-        WHERE ResidentID = ?
-    """, resident_id)
-
-    row = cursor.fetchone()
-    conn.close()
-
-    if not row:
-        return None
-
-    return {
-        "resident_id": row[0],
-        "full_name": row[1],
-        "flat_number": row[2],
-        "phone_number": row[3],
-        "email": row[4],
-        "tower_name": row[5],
-        "is_owner": bool(row[6])
-    }
-
-
 def get_resident_invoices(resident_id: int):
-
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -71,7 +35,6 @@ def get_resident_invoices(resident_id: int):
 
 
 def get_resident_payments(resident_id: int):
-
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -83,7 +46,10 @@ def get_resident_payments(resident_id: int):
             i.InvoiceYear,
             p.AmountPaid,
             p.PaymentMode,
-            p.PaymentDate
+            p.PaymentDate,
+            p.PaymentSource,
+            p.ReceiptNumber,
+            p.IsImmutable
         FROM PaymentTransactions p
         INNER JOIN MaintenanceInvoices i
             ON p.InvoiceID = i.InvoiceID
@@ -102,14 +68,16 @@ def get_resident_payments(resident_id: int):
             "year": row[3],
             "amount_paid": float(row[4]),
             "payment_mode": row[5],
-            "payment_date": str(row[6])
+            "payment_date": str(row[6]),
+            "payment_source": row[7],
+            "receipt_number": row[8],
+            "is_immutable": bool(row[9]),
         }
         for row in rows
     ]
 
 
 def get_resident_summary(resident_id: int):
-
     conn = get_connection()
     cursor = conn.cursor()
 

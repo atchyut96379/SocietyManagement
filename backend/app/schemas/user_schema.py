@@ -1,27 +1,24 @@
+from typing import Optional
+
 from pydantic import BaseModel, EmailStr
-
-class AdminRegister(BaseModel):
-    full_name: str
-    email: EmailStr
-    password: str
-    phone_number: str
-
-
-class SecurityRegister(BaseModel):
-    full_name: str
-    email: EmailStr
-    password: str
-    phone_number: str
 
 
 class SecretaryRegister(BaseModel):
     full_name: str
-    email: EmailStr
-    password: str
     phone_number: str
+    email: Optional[EmailStr] = None
 
 
-class ResidentRegister(BaseModel):
-    resident_id: int
-    email: EmailStr
-    password: str
+class SecurityRegister(BaseModel):
+    full_name: str
+    phone_number: str
+    email: Optional[EmailStr] = None
+
+
+class ResidentLoginCreate(BaseModel):
+    flat_id: int
+    full_name: str
+    phone_number: str
+    email: Optional[EmailStr] = None
+    resident_type: str
+    committee_role: Optional[str] = "None"

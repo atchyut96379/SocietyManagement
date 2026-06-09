@@ -15,9 +15,9 @@ load_dotenv()
 
 DEFAULT_ADMIN = {
     "full_name": "Society Admin",
+    "phone_number": "9999999999",
     "email": "admin@society.com",
     "password": "Admin@123",
-    "phone_number": "9999999999",
 }
 
 
@@ -62,101 +62,17 @@ def run_schema():
     conn.close()
 
 
-def seed_admin():
-    conn = get_app_connection()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        "SELECT UserID FROM Users WHERE Email = ?",
-        DEFAULT_ADMIN["email"]
-    )
-
-    if cursor.fetchone():
-        print(f"Admin already exists: {DEFAULT_ADMIN['email']}")
-        conn.close()
-        return
-
-    password_hash = bcrypt.hashpw(
-        DEFAULT_ADMIN["password"].encode("utf-8"),
-        bcrypt.gensalt()
-    ).decode("utf-8")
-
-    cursor.execute(
-        """
-        INSERT INTO Users
-        (FullName, Email, PasswordHash, PhoneNumber, RoleID)
-        VALUES (?, ?, ?, ?, 1)
-        """,
-        (
-            DEFAULT_ADMIN["full_name"],
-            DEFAULT_ADMIN["email"],
-            password_hash,
-            DEFAULT_ADMIN["phone_number"],
-        )
-    )
-
-    conn.commit()
-    conn.close()
-
-    print("Default admin created:")
-    print(f"  Email:    {DEFAULT_ADMIN['email']}")
-    print(f"  Password: {DEFAULT_ADMIN['password']}")
-
-
-DEFAULT_SECURITY = {
-    "full_name": "Gate Security",
-    "email": "security@society.com",
-    "password": "Security@123",
-    "phone_number": "8888888888",
-}
-
-
-def seed_security():
-    conn = get_app_connection()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        "SELECT UserID FROM Users WHERE Email = ?",
-        DEFAULT_SECURITY["email"]
-    )
-
-    if cursor.fetchone():
-        print(f"Security user already exists: {DEFAULT_SECURITY['email']}")
-        conn.close()
-        return
-
-    password_hash = bcrypt.hashpw(
-        DEFAULT_SECURITY["password"].encode("utf-8"),
-        bcrypt.gensalt()
-    ).decode("utf-8")
-
-    cursor.execute(
-        """
-        INSERT INTO Users
-        (FullName, Email, PasswordHash, PhoneNumber, RoleID)
-        VALUES (?, ?, ?, ?, 3)
-        """,
-        (
-            DEFAULT_SECURITY["full_name"],
-            DEFAULT_SECURITY["email"],
-            password_hash,
-            DEFAULT_SECURITY["phone_number"],
-        )
-    )
-
-    conn.commit()
-    conn.close()
-
-    print("Default security user created:")
-    print(f"  Email:    {DEFAULT_SECURITY['email']}")
-    print(f"  Password: {DEFAULT_SECURITY['password']}")
-
-
 def run_migrations():
     migration_files = [
         "migrate_resident_portal.sql",
         "migrate_committee_role.sql",
         "migrate_secretary_role.sql",
+        "migrate_v2_enhancements.sql",
+        "migrate_visitor_entry_code.sql",
+        "migrate_guard_profile.sql",
+        "migrate_expense_proof.sql",
+        "migrate_dual_accounts.sql",
+        "migrate_monthly_report_settings.sql",
     ]
 
     conn = get_app_connection()
@@ -180,62 +96,65 @@ def run_migrations():
         ]
 
         for batch in batches:
-            cursor.execute(batch)
+            try:
+                cursor.execute(batch)
+            except Exception as ex:
+                print(f"Migration note ({filename}): {ex}")
 
     cursor.close()
     conn.close()
 
 
-def seed_resident_login():
+def seed_admin():
     conn = get_app_connection()
     cursor = conn.cursor()
 
     cursor.execute(
-        "SELECT TOP 1 ResidentID, FullName, Email, PhoneNumber "
-        "FROM Residents ORDER BY ResidentID"
-    )
-
-    resident = cursor.fetchone()
-
-    if not resident:
-        conn.close()
-        return
-
-    resident_id, full_name, email, phone = resident
-
-    cursor.execute(
-        "SELECT UserID FROM Users WHERE Email = ? OR ResidentID = ?",
-        email, resident_id
+        "SELECT UserID FROM Users WHERE PhoneNumber = ?",
+        DEFAULT_ADMIN["phone_number"]
     )
 
     if cursor.fetchone():
-        print(f"Resident login already exists for: {email}")
+        print(f"Admin already exists: {DEFAULT_ADMIN['phone_number']}")
         conn.close()
         return
 
     password_hash = bcrypt.hashpw(
-        "Resident@123".encode("utf-8"),
+        DEFAULT_ADMIN["password"].encode("utf-8"),
         bcrypt.gensalt()
     ).decode("utf-8")
 
     cursor.execute(
         """
         INSERT INTO Users
-        (FullName, Email, PasswordHash, PhoneNumber, RoleID, ResidentID)
-        VALUES (?, ?, ?, ?, 2, ?)
+        (FullName, Email, PasswordHash, PhoneNumber, RoleID, MustChangePassword, ProfileCompleted)
+        VALUES (?, ?, ?, ?, 1, 0, 1)
         """,
-        (full_name, email, password_hash, phone, resident_id)
+        (
+            DEFAULT_ADMIN["full_name"],
+            DEFAULT_ADMIN["email"],
+            password_hash,
+            DEFAULT_ADMIN["phone_number"],
+        )
     )
 
     conn.commit()
     conn.close()
 
-    print("Default resident login created:")
-    print(f"  Email:    {email}")
-    print(f"  Password: Resident@123")
+    print("Default admin created:")
+    print(f"  Mobile:   {DEFAULT_ADMIN['phone_number']}")
+    print(f"  Password: {DEFAULT_ADMIN['password']}")
+    print("  Admin can only create/delete Secretary accounts.")
 
 
-def seed_sample_data():
+def seed_flats():
+    from app.services.flat_service import seed_flats
+
+    seed_flats()
+    print("All society flats seeded (5 floors x 18 units).")
+
+
+def seed_sample_residents():
     conn = get_app_connection()
     cursor = conn.cursor()
 
@@ -244,28 +163,65 @@ def seed_sample_data():
         conn.close()
         return
 
-    cursor.execute(
-        """
-        INSERT INTO Residents
-        (FullName, FlatNumber, PhoneNumber, Email, TowerName, IsOwner)
-        VALUES
-        ('Ramesh Kumar', 'A-101', '9876543210', 'ramesh@example.com', 'Tower A', 1),
-        ('Priya Sharma', 'B-202', '9876543211', 'priya@example.com', 'Tower B', 1),
-        ('Amit Patel', 'C-303', '9876543212', 'amit@example.com', 'Tower C', 0)
-        """
-    )
+    samples = [
+        ("Ramesh Kumar", "101", "9876543210", "ramesh@example.com", "Owner", "None"),
+        ("Priya Sharma", "201", "9876543211", "priya@example.com", "Owner", "President"),
+        ("Amit Patel", "301", "9876543212", "amit@example.com", "Tenant", "None"),
+    ]
+
+    for full_name, flat_number, phone, email, resident_type, committee_role in samples:
+        cursor.execute(
+            "SELECT FlatID FROM Flats WHERE FlatNumber = ?",
+            flat_number
+        )
+        flat_row = cursor.fetchone()
+        if not flat_row:
+            continue
+
+        flat_id = flat_row[0]
+        committee = None if committee_role == "None" else committee_role
+
+        cursor.execute(
+            """
+            INSERT INTO Residents
+            (FullName, FlatNumber, PhoneNumber, Email, TowerName, IsOwner,
+             CommitteeRole, FlatID, ResidentType)
+            VALUES (?, ?, ?, ?, 'Tower A', ?, ?, ?, ?)
+            """,
+            (
+                full_name,
+                flat_number,
+                phone,
+                email,
+                1 if resident_type == "Owner" else 0,
+                committee,
+                flat_id,
+                resident_type,
+            )
+        )
+
+        cursor.execute("SELECT @@IDENTITY")
+        resident_id = int(cursor.fetchone()[0])
+
+        cursor.execute(
+            """
+            UPDATE Flats SET IsOccupied = 1, ResidentID = ?
+            WHERE FlatID = ?
+            """,
+            (resident_id, flat_id)
+        )
 
     cursor.execute(
         """
         INSERT INTO Notices (Title, Description, CreatedBy)
         SELECT
             'Welcome to Society Management',
-            'Use this portal to manage residents, visitors, complaints, and finances.',
+            'Secretary manages residents, visitors, complaints, and finances.',
             UserID
         FROM Users
-        WHERE Email = ?
+        WHERE PhoneNumber = ?
         """,
-        DEFAULT_ADMIN["email"]
+        DEFAULT_ADMIN["phone_number"]
     )
 
     conn.commit()
@@ -277,8 +233,12 @@ if __name__ == "__main__":
     print("Setting up SocietyManagement database...")
     run_schema()
     run_migrations()
+    seed_flats()
     seed_admin()
-    seed_security()
-    seed_sample_data()
-    seed_resident_login()
+    seed_sample_residents()
     print("Database setup complete.")
+    print("")
+    print("Next steps:")
+    print("  1. Admin logs in with mobile number")
+    print("  2. Admin creates Secretary via POST /admin/secretary")
+    print("  3. Secretary manages all society operations")

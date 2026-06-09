@@ -4,6 +4,7 @@ from app.auth.roles import require_admin
 from app.schemas.user_schema import SecretaryRegister
 from app.services.user_service import (
     create_secretary,
+    delete_secretary,
     get_secretary_status
 )
 
@@ -13,20 +14,8 @@ router = APIRouter(
 )
 
 
-@router.get("/dashboard")
-def admin_dashboard(
-    user=Depends(require_admin)
-):
-    return {
-        "message": "Welcome Admin",
-        "user": user
-    }
-
-
 @router.get("/secretary")
-def secretary_status(
-    user=Depends(require_admin)
-):
+def secretary_status(user=Depends(require_admin)):
     return get_secretary_status()
 
 
@@ -36,3 +25,8 @@ def register_secretary(
     admin=Depends(require_admin)
 ):
     return create_secretary(user)
+
+
+@router.delete("/secretary")
+def remove_secretary(admin=Depends(require_admin)):
+    return delete_secretary()

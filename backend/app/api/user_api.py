@@ -1,31 +1,17 @@
 from fastapi import APIRouter, Depends
 
-from app.schemas.user_schema import (
-    AdminRegister,
-    SecurityRegister
-)
-from app.schemas.login_schema import LoginRequest, ChangePasswordRequest
 from app.auth.auth_bearer import verify_token
-from app.auth.roles import require_admin
-
+from app.auth.roles import require_secretary
+from app.schemas.login_schema import LoginRequest, ChangePasswordRequest
+from app.schemas.user_schema import SecurityRegister
 from app.services.user_service import (
-    create_admin,
-    create_security,
     change_password,
+    create_security,
+    list_security_guards,
     login_user
 )
 
 router = APIRouter()
-
-
-@router.post("/register-admin")
-def register_admin(user: AdminRegister):
-    return create_admin(user)
-
-
-@router.post("/register-security")
-def register_security(user: SecurityRegister):
-    return create_security(user)
 
 
 @router.post("/login")
@@ -43,3 +29,18 @@ def update_password(
         data.current_password,
         data.new_password
     )
+
+
+@router.post("/register-security")
+def register_security(
+    user: SecurityRegister,
+    secretary=Depends(require_secretary)
+):
+    return create_security(user)
+
+
+@router.get("/security-guards")
+def get_security_guards(
+    secretary=Depends(require_secretary)
+):
+    return list_security_guards()
