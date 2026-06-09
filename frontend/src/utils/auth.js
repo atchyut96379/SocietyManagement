@@ -108,6 +108,14 @@ export function getCommitteeRole() {
     return localStorage.getItem("committee_role") || "None";
 }
 
+export function setCommitteeRole(role) {
+    if (role && role !== "None") {
+        localStorage.setItem("committee_role", role);
+    } else {
+        localStorage.removeItem("committee_role");
+    }
+}
+
 export function getRoleLabel() {
     if (isAdmin()) return "Admin";
     if (isSecretary()) return "Secretary";

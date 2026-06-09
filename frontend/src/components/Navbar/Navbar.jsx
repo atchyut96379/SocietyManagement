@@ -1,26 +1,49 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../../services/api";
 import {
     getUserName,
     logout,
     getRoleLabel,
+    setCommitteeRole,
     isAdmin,
     isSecretary,
     isSecurity,
     isResident
 } from "../../utils/auth";
 
-function getPortalTitle() {
+function getPortalTitle(roleLabel) {
     if (isAdmin()) return "Admin Console";
     if (isSecretary()) return "Society Management";
     if (isSecurity()) return "Guard Station";
-    if (isResident()) return "Resident Portal";
+    if (isResident()) {
+        return roleLabel && roleLabel !== "Resident"
+            ? `${roleLabel} Portal`
+            : "Resident Portal";
+    }
     return "Society Management";
 }
 
 function Navbar() {
 
+    const [roleLabel, setRoleLabel] = useState(getRoleLabel);
     const [showPasswordForm, setShowPasswordForm] = useState(false);
+
+    useEffect(() => {
+        if (!isResident()) {
+            setRoleLabel(getRoleLabel());
+            return;
+        }
+
+        api.get("/portal/profile")
+            .then((response) => {
+                const committeeRole = response.data?.committee_role;
+                setCommitteeRole(committeeRole);
+                setRoleLabel(getRoleLabel());
+            })
+            .catch(() => {
+                setRoleLabel(getRoleLabel());
+            });
+    }, []);
     const [passwordForm, setPasswordForm] = useState({
         current_password: "",
         new_password: ""
@@ -64,9 +87,11 @@ function Navbar() {
         <header className="app-navbar">
             <div className="d-flex justify-content-between align-items-center">
                 <div>
-                    <h1 className="app-navbar-title">{getPortalTitle()}</h1>
+                    <h1 className="app-navbar-title">
+                        {getPortalTitle(roleLabel)}
+                    </h1>
                     <div className="app-navbar-subtitle">
-                        {getUserName()} · {getRoleLabel()}
+                        {getUserName()} · {roleLabel}
                     </div>
                 </div>
 

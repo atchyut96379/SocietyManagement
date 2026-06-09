@@ -1,4 +1,11 @@
+import { useEffect, useState } from "react";
+import api from "../../services/api";
 import SidebarNav from "../ui/SidebarNav";
+import {
+    getRoleLabel,
+    isResident,
+    setCommitteeRole
+} from "../../utils/auth";
 
 const PORTAL_ITEMS = [
     { to: "/portal", label: "Home", end: true, icon: "🏠" },
@@ -11,11 +18,33 @@ const PORTAL_ITEMS = [
 
 function PortalSidebar() {
 
+    const [portalLabel, setPortalLabel] = useState("Resident Portal");
+
+    useEffect(() => {
+        if (!isResident()) {
+            return;
+        }
+
+        api.get("/portal/profile")
+            .then((response) => {
+                setCommitteeRole(response.data?.committee_role);
+                const role = getRoleLabel();
+                setPortalLabel(
+                    role === "Resident"
+                        ? "Resident Portal"
+                        : `${role} · Portal`
+                );
+            })
+            .catch(() => {
+                setPortalLabel("Resident Portal");
+            });
+    }, []);
+
     return (
         <aside className="app-sidebar app-sidebar--resident">
             <div className="app-sidebar-brand">
                 <h3>My Flat</h3>
-                <small>Resident Portal</small>
+                <small>{portalLabel}</small>
             </div>
             <SidebarNav items={PORTAL_ITEMS} />
         </aside>
