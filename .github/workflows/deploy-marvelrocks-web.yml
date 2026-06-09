@@ -27,5 +27,6 @@ jobs:
           app_location: frontend
           output_location: build
           app_build_command: npm run build
+          production_branch: master
         env:
           REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
