@@ -18,6 +18,7 @@ from app.api.finance_api import router as finance_router
 from app.api.dashboard_api import router as dashboard_router
 from app.api.expense_api import router as expense_router
 from app.api.portal_api import router as portal_router
+from app.api.flat_api import router as flat_router
 
 load_dotenv()
 
@@ -56,6 +57,7 @@ app.include_router(finance_router)
 app.include_router(dashboard_router)
 app.include_router(expense_router)
 app.include_router(portal_router)
+app.include_router(flat_router)
 
 
 @app.get("/")

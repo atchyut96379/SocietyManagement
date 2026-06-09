@@ -12,8 +12,8 @@ RESIDENT_ROLE = 2
 SECURITY_ROLE = 3
 SECRETARY_ROLE = 4
 
-MANAGEMENT_ROLES = (ADMIN_ROLE, SECRETARY_ROLE)
-STAFF_ROLES = (ADMIN_ROLE, SECRETARY_ROLE, SECURITY_ROLE)
+MANAGEMENT_ROLES = (SECRETARY_ROLE,)
+STAFF_ROLES = (SECRETARY_ROLE, SECURITY_ROLE)
 
 
 def require_admin(user=Depends(verify_token)):
@@ -25,11 +25,21 @@ def require_admin(user=Depends(verify_token)):
     return user
 
 
-def require_management(user=Depends(verify_token)):
-    if user.get("role_id") not in MANAGEMENT_ROLES:
+def require_secretary(user=Depends(verify_token)):
+    if user.get("role_id") != SECRETARY_ROLE:
         raise HTTPException(
             status_code=403,
-            detail="Management access required"
+            detail="Secretary access required"
+        )
+    return user
+
+
+def require_management(user=Depends(verify_token)):
+    """Secretary-only management (admin cannot access operational features)."""
+    if user.get("role_id") != SECRETARY_ROLE:
+        raise HTTPException(
+            status_code=403,
+            detail="Secretary access required"
         )
     return user
 
