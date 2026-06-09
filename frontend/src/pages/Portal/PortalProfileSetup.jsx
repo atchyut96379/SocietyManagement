@@ -18,30 +18,27 @@ function PortalProfileSetup() {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        loadProfile();
-    }, []);
+        const loadProfile = async () => {
+            try {
+                const response = await api.get("/portal/profile");
 
-    const loadProfile = async () => {
+                if (response.data.profile_completed) {
+                    navigate("/portal");
+                    return;
+                }
 
-        try {
-
-            const response = await api.get("/portal/profile");
-
-            if (response.data.profile_completed) {
-                navigate("/portal");
-                return;
+                setProfile(response.data);
+                setForm((prev) => ({
+                    ...prev,
+                    phone_number: response.data.phone_number || ""
+                }));
+            } catch {
+                setError("Unable to load profile");
             }
+        };
 
-            setProfile(response.data);
-            setForm((prev) => ({
-                ...prev,
-                phone_number: response.data.phone_number || ""
-            }));
-
-        } catch {
-            setError("Unable to load profile");
-        }
-    };
+        loadProfile();
+    }, [navigate]);
 
     const submit = async (event) => {
 
