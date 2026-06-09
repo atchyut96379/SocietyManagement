@@ -1,0 +1,10 @@
+IF COL_LENGTH('Residents', 'Email') IS NOT NULL
+BEGIN
+    ALTER TABLE Residents ALTER COLUMN Email NVARCHAR(100) NULL;
+END
+GO
+
+UPDATE Residents
+SET Email = ''
+WHERE Email IS NULL;
+GO

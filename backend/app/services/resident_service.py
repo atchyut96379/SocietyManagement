@@ -203,6 +203,11 @@ def _validate_resident_type(resident_type: str):
     return None
 
 
+def _resident_email_for_storage(email: str | None) -> str:
+    """Empty string means no email yet; resident provides it on first login."""
+    return (email or "").strip()
+
+
 def create_resident(resident):
     type_error = _validate_resident_type(resident.resident_type)
     if type_error:
@@ -243,7 +248,7 @@ def create_resident(resident):
             resident.full_name,
             flat["flat_number"],
             resident.phone_number,
-            resident.email,
+            _resident_email_for_storage(resident.email),
             flat["tower_name"],
             1 if resident.resident_type == "Owner" else 0,
             _normalize_committee_role(resident.committee_role),
@@ -275,10 +280,11 @@ def create_resident_with_login(resident):
 
     flat = get_flat_by_id(resident.flat_id)
 
+    stored_email = _resident_email_for_storage(resident.email)
     login_result = create_resident_account(
         resident_id=result["resident_id"],
         phone_number=resident.phone_number,
-        email=resident.email,
+        email=stored_email or None,
         full_name=resident.full_name,
         committee_role=resident.committee_role,
         flat_number=flat["flat_number"],
@@ -444,13 +450,20 @@ def update_resident(resident_id, resident):
     cursor = conn.cursor()
 
     cursor.execute(
-        "SELECT ResidentID, FlatID FROM Residents WHERE ResidentID = ?",
+        "SELECT ResidentID, FlatID, Email FROM Residents WHERE ResidentID = ?",
         resident_id
     )
 
-    if not cursor.fetchone():
+    row = cursor.fetchone()
+
+    if not row:
         conn.close()
         return {"success": False, "message": "Resident not found"}
+
+    if "email" in resident.model_fields_set:
+        email_value = _resident_email_for_storage(resident.email)
+    else:
+        email_value = row[2]
 
     cursor.execute("""
         UPDATE Residents
@@ -466,12 +479,22 @@ def update_resident(resident_id, resident):
     (
         resident.full_name,
         resident.phone_number,
-        resident.email,
+        email_value,
         1 if resident.resident_type == "Owner" else 0,
         _normalize_committee_role(resident.committee_role),
         resident.resident_type,
         resident_id
     ))
+
+    if "email" in resident.model_fields_set and resident.email:
+        cursor.execute(
+            """
+            UPDATE Users
+            SET Email = ?
+            WHERE ResidentID = ?
+            """,
+            (resident.email, resident_id)
+        )
 
     conn.commit()
     conn.close()

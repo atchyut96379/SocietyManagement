@@ -376,6 +376,7 @@ function Residents() {
                                             e.target.value
                                         )
                                     }
+                                    autoComplete="off"
                                 />
                             </div>
 
@@ -443,8 +444,9 @@ function Residents() {
 
                         {!editingId && (
                             <small className="text-muted d-block mt-2">
-                                Login is auto-created. Password uses flat number
-                                (e.g. MyGa119) or committee role code.
+                                Email is optional here — the resident can enter it
+                                on first login. Login is auto-created. Password uses
+                                flat number (e.g. MyGa119) or committee role code.
                                 Secretary is created by Admin only — not listed here.
                                 Assigned committee roles disappear from this list.
                             </small>
