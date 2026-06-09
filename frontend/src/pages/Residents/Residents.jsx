@@ -462,7 +462,7 @@ function Residents() {
                 <thead>
 
                     <tr>
-                        <th>ID</th>
+                        <th>#</th>
                         <th>Name</th>
                         <th>Flat</th>
                         <th>Mobile</th>
@@ -477,11 +477,11 @@ function Residents() {
                 <tbody>
 
                     {
-                        filtered.map((r) => (
+                        filtered.map((r, index) => (
 
                             <tr key={r.resident_id}>
 
-                                <td>{r.resident_id}</td>
+                                <td>{index + 1}</td>
                                 <td>{r.full_name}</td>
                                 <td>{r.flat_number}</td>
                                 <td>{r.phone_number}</td>
