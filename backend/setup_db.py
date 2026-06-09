@@ -11,6 +11,8 @@ import re
 import bcrypt
 from dotenv import load_dotenv
 
+from app.database.connection import build_connection_string, uses_sql_authentication
+
 load_dotenv()
 
 DEFAULT_ADMIN = {
@@ -24,13 +26,7 @@ DEFAULT_ADMIN = {
 def get_master_connection():
     import pyodbc
 
-    return pyodbc.connect(
-        f"DRIVER={{{os.getenv('DB_DRIVER')}}};"
-        f"SERVER={os.getenv('DB_SERVER')};"
-        "DATABASE=master;"
-        "Trusted_Connection=yes;"
-        "TrustServerCertificate=yes;"
-    )
+    return pyodbc.connect(build_connection_string("master"))
 
 
 def get_app_connection():
@@ -39,7 +35,7 @@ def get_app_connection():
     return get_connection()
 
 
-def run_schema():
+def _schema_batches():
     schema_path = os.path.join(
         os.path.dirname(__file__),
         "database",
@@ -49,14 +45,38 @@ def run_schema():
     with open(schema_path, "r", encoding="utf-8") as file:
         content = file.read()
 
-    batches = [batch.strip() for batch in re.split(r"\bGO\b", content) if batch.strip()]
+    batches = [
+        batch.strip()
+        for batch in re.split(r"\bGO\b", content)
+        if batch.strip()
+    ]
 
-    conn = get_master_connection()
+    if uses_sql_authentication():
+        return [
+            batch for batch in batches
+            if "CREATE DATABASE" not in batch.upper()
+            and not batch.strip().upper().startswith("USE ")
+        ]
+
+    return batches
+
+
+def run_schema():
+    batches = _schema_batches()
+
+    if uses_sql_authentication():
+        conn = get_app_connection()
+    else:
+        conn = get_master_connection()
+
     conn.autocommit = True
     cursor = conn.cursor()
 
     for batch in batches:
-        cursor.execute(batch)
+        try:
+            cursor.execute(batch)
+        except Exception as ex:
+            print(f"Schema note: {ex}")
 
     cursor.close()
     conn.close()
