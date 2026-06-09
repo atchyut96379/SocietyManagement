@@ -323,6 +323,7 @@ backend/uploads/
 backend/.env
 frontend/.env
 frontend/.env.local
+frontend/.env.production
 
 # Cake - Uncomment if you are using it
 # tools/**

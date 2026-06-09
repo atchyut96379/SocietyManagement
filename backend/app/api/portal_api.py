@@ -54,6 +54,7 @@ def complete_my_profile(
         user_id=user["user_id"],
         owner_name=data.owner_name,
         phone_number=data.phone_number,
+        email=data.email,
         car_number=data.car_number,
         bike_number=data.bike_number,
         new_password=data.new_password

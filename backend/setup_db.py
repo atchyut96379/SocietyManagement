@@ -93,6 +93,7 @@ def run_migrations():
         "migrate_expense_proof.sql",
         "migrate_dual_accounts.sql",
         "migrate_monthly_report_settings.sql",
+        "migrate_resident_optional_email.sql",
     ]
 
     conn = get_app_connection()
@@ -113,6 +114,7 @@ def run_migrations():
             batch.strip()
             for batch in re.split(r"\bGO\b", content)
             if batch.strip()
+            and not batch.strip().upper().startswith("USE ")
         ]
 
         for batch in batches:

@@ -23,7 +23,9 @@ Use this guide with your existing Azure resources in **rg-marvelrocks-prod**.
 
 ## Part 2 — Initialize database
 
-On your PC, create `backend/.env` (never commit this file):
+On your PC, create `backend/.env` (never commit this file).
+
+**Option A — separate variables (Azure App Service):**
 
 ```env
 DB_SERVER=marvelrocks-sql-96379.database.windows.net
@@ -31,13 +33,34 @@ DB_DATABASE=mygatesociety
 DB_DRIVER=ODBC Driver 18 for SQL Server
 DB_USER=YOUR_SQL_ADMIN
 DB_PASSWORD=YOUR_SQL_PASSWORD
+```
 
+**Option B — legacy `DATABASE_URL` from old MyGate project:**
+
+```env
+DATABASE_URL=sqlserver://marvelrocks-sql-96379.database.windows.net:1433;database=mygatesociety;user=YOUR_USER;password=YOUR_PASSWORD;encrypt=true;trustServerCertificate=true
+```
+
+**Shared settings (both options):**
+
+```env
 JWT_SECRET=create-a-long-random-secret-here
 FRONTEND_URL=https://www.marvelrocks.in,https://marvelrocks-web.azurestaticapps.net
 APARTMENT_NAME=Marvel Rock Flat Owners Welfare Association
 SOCIETY_REG_NO=316/2024
 SOCIETY_ADDRESS=Sangivalasa, Bheemunipatnam Mandal, Visakhapatnam
+RAZORPAY_KEY_ID=your_razorpay_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_secret
+RAZORPAY_TEST_MODE=false
 ```
+
+| Old project variable | This project |
+|---------------------|--------------|
+| `DATABASE_URL` (localhost) | Use Azure host: `marvelrocks-sql-96379.database.windows.net` |
+| `JWT_SECRET` | Same name |
+| `RAZORPAY_KEY_ID` / `SECRET` | Same names |
+| `CRON_SECRET` | Not used |
+| `VAPID_*` | Not used (no push notifications yet) |
 
 Run migrations and seed data:
 
@@ -65,8 +88,13 @@ Azure Portal → **marvelrocks-api** → **Settings** → **Environment variable
 | `APARTMENT_NAME` | `Marvel Rock Flat Owners Welfare Association` |
 | `SOCIETY_REG_NO` | `316/2024` |
 | `SOCIETY_ADDRESS` | `Sangivalasa, Bheemunipatnam Mandal, Visakhapatnam` |
+| `RAZORPAY_KEY_ID` | Your Razorpay key |
+| `RAZORPAY_KEY_SECRET` | Your Razorpay secret |
+| `RAZORPAY_TEST_MODE` | `false` |
 | `WEBSITES_PORT` | `8000` |
 | `PORT` | `8000` |
+
+Alternatively set a single `DATABASE_URL` instead of `DB_SERVER` / `DB_USER` / `DB_PASSWORD`.
 
 ### Connect API to Container Registry
 

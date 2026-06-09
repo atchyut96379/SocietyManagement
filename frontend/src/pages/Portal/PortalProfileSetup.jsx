@@ -9,6 +9,7 @@ function PortalProfileSetup() {
     const [form, setForm] = useState({
         owner_name: "",
         phone_number: "",
+        email: "",
         car_number: "",
         bike_number: "",
         new_password: "",
@@ -30,7 +31,10 @@ function PortalProfileSetup() {
                 setProfile(response.data);
                 setForm((prev) => ({
                     ...prev,
-                    phone_number: response.data.phone_number || ""
+                    phone_number: response.data.phone_number || "",
+                    email: response.data.needs_email
+                        ? ""
+                        : (response.data.email || "")
                 }));
             } catch {
                 setError("Unable to load profile");
@@ -50,11 +54,16 @@ function PortalProfileSetup() {
             return;
         }
 
+        if (profile?.needs_email && !form.email.trim()) {
+            setError("Email is required on first login");
+            return;
+        }
+
         setLoading(true);
 
         try {
 
-            const response = await api.post("/portal/profile/complete", {
+            const payload = {
                 owner_name: profile?.resident_type === "Tenant"
                     ? form.owner_name
                     : null,
@@ -62,7 +71,13 @@ function PortalProfileSetup() {
                 car_number: form.car_number || null,
                 bike_number: form.bike_number || null,
                 new_password: form.new_password
-            });
+            };
+
+            if (profile?.needs_email) {
+                payload.email = form.email.trim();
+            }
+
+            const response = await api.post("/portal/profile/complete", payload);
 
             if (!response.data.success) {
                 setError(response.data.message);
@@ -148,6 +163,26 @@ function PortalProfileSetup() {
                                         required
                                     />
                                 </div>
+
+                                {profile.needs_email && (
+                                    <div className="mb-3">
+                                        <label className="form-label">
+                                            Email *
+                                        </label>
+                                        <input
+                                            type="email"
+                                            className="form-control"
+                                            value={form.email}
+                                            onChange={(e) =>
+                                                setForm({
+                                                    ...form,
+                                                    email: e.target.value
+                                                })
+                                            }
+                                            required
+                                        />
+                                    </div>
+                                )}
 
                                 <div className="mb-3">
                                     <label className="form-label">

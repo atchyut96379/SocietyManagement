@@ -59,7 +59,7 @@ BEGIN
         FullName NVARCHAR(100) NOT NULL,
         FlatNumber NVARCHAR(20) NOT NULL,
         PhoneNumber NVARCHAR(20) NOT NULL,
-        Email NVARCHAR(100) NOT NULL,
+        Email NVARCHAR(100) NULL,
         TowerName NVARCHAR(50) NOT NULL,
         IsOwner BIT NOT NULL DEFAULT 1,
         CommitteeRole NVARCHAR(50) NULL,

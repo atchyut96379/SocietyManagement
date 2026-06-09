@@ -219,6 +219,12 @@ def get_secretary_status():
     }
 
 
+def _placeholder_resident_email(phone_number: str) -> str:
+    from app.services.resident_resolver import normalize_phone
+
+    return f"{normalize_phone(phone_number)}@resident.local"
+
+
 def create_resident_account(
     resident_id: int,
     phone_number: str,
@@ -253,6 +259,7 @@ def create_resident_account(
         flat_number=flat_number
     )
     password_hash = _hash_password(password)
+    user_email = email or _placeholder_resident_email(phone_number)
 
     cursor.execute(
         """
@@ -271,7 +278,7 @@ def create_resident_account(
         """,
         (
             full_name,
-            email,
+            user_email,
             password_hash,
             phone_number,
             resident_id,
