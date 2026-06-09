@@ -404,8 +404,20 @@ def login_user(login_data):
             "phone_number": login_data.phone_number,
         })
 
+    committee_role = None
     if resident_id:
         token_data["resident_id"] = resident_id
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT CommitteeRole FROM Residents WHERE ResidentID = ?",
+            (resident_id,)
+        )
+        role_row = cursor.fetchone()
+        conn.close()
+        if role_row and role_row[0] and role_row[0] != "None":
+            committee_role = role_row[0]
+            token_data["committee_role"] = committee_role
 
     token = create_access_token(token_data)
 
@@ -415,6 +427,7 @@ def login_user(login_data):
         "user_name": user[1],
         "role_id": user[4],
         "resident_id": resident_id,
+        "committee_role": committee_role or "None",
         "must_change_password": bool(user[6]),
         "profile_completed": bool(user[7])
     }

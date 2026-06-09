@@ -15,6 +15,7 @@ export function logout() {
     localStorage.removeItem("role_id");
     localStorage.removeItem("resident_id");
     localStorage.removeItem("user_name");
+    localStorage.removeItem("committee_role");
     localStorage.removeItem("must_change_password");
     localStorage.removeItem("profile_completed");
 }
@@ -63,6 +64,12 @@ export function syncSessionFromToken() {
         localStorage.setItem("user_name", payload.email);
     }
 
+    if (payload.committee_role && payload.committee_role !== "None") {
+        localStorage.setItem("committee_role", payload.committee_role);
+    } else {
+        localStorage.removeItem("committee_role");
+    }
+
     return true;
 }
 
@@ -96,10 +103,21 @@ export function isSecurity() {
     return getRoleId() === SECURITY_ROLE;
 }
 
+export function getCommitteeRole() {
+    syncSessionFromToken();
+    return localStorage.getItem("committee_role") || "None";
+}
+
 export function getRoleLabel() {
     if (isAdmin()) return "Admin";
     if (isSecretary()) return "Secretary";
     if (isSecurity()) return "Guard";
+
+    const committeeRole = getCommitteeRole();
+    if (committeeRole && committeeRole !== "None") {
+        return committeeRole;
+    }
+
     if (isResident()) return "Resident";
     return "User";
 }

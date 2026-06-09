@@ -36,6 +36,10 @@ function PortalHome() {
                     <h2 className="mb-1">Welcome, {profile.full_name}</h2>
                     <p className="text-muted mb-0">
                         {profile.tower_name} · Flat {profile.flat_number}
+                        {profile.committee_role &&
+                        profile.committee_role !== "None"
+                            ? ` · ${profile.committee_role}`
+                            : ""}
                     </p>
                 </div>
             </div>

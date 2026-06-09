@@ -79,6 +79,18 @@ function Login() {
 
             localStorage.setItem("user_name", response.data.user_name);
 
+            if (
+                response.data.committee_role &&
+                response.data.committee_role !== "None"
+            ) {
+                localStorage.setItem(
+                    "committee_role",
+                    response.data.committee_role
+                );
+            } else {
+                localStorage.removeItem("committee_role");
+            }
+
             if (response.data.must_change_password) {
                 localStorage.setItem("must_change_password", "1");
             } else {
