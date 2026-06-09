@@ -28,7 +28,7 @@ jobs:
       - name: Build frontend
         working-directory: frontend
         run: |
-          npm ci
+          npm install --no-audit --no-fund
           npm run build
           cp staticwebapp.config.json build/
         env:
