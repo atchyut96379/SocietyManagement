@@ -99,6 +99,7 @@ def seed_admin():
     conn.close()
 
     print("Default admin created:")
+    print(f"  Mobile:   {DEFAULT_ADMIN['phone_number']}")
     print(f"  Email:    {DEFAULT_ADMIN['email']}")
     print(f"  Password: {DEFAULT_ADMIN['password']}")
 
@@ -116,12 +117,12 @@ def seed_security():
     cursor = conn.cursor()
 
     cursor.execute(
-        "SELECT UserID FROM Users WHERE Email = ?",
-        DEFAULT_SECURITY["email"]
+        "SELECT UserID FROM Users WHERE PhoneNumber = ?",
+        DEFAULT_SECURITY["phone_number"]
     )
 
     if cursor.fetchone():
-        print(f"Security user already exists: {DEFAULT_SECURITY['email']}")
+        print(f"Security user already exists: {DEFAULT_SECURITY['phone_number']}")
         conn.close()
         return
 
@@ -148,7 +149,7 @@ def seed_security():
     conn.close()
 
     print("Default security user created:")
-    print(f"  Email:    {DEFAULT_SECURITY['email']}")
+    print(f"  Mobile:   {DEFAULT_SECURITY['phone_number']}")
     print(f"  Password: {DEFAULT_SECURITY['password']}")
 
 
@@ -157,6 +158,7 @@ def run_migrations():
         "migrate_resident_portal.sql",
         "migrate_committee_role.sql",
         "migrate_secretary_role.sql",
+        "migrate_enhancements.sql",
     ]
 
     conn = get_app_connection()
@@ -170,6 +172,9 @@ def run_migrations():
             filename
         )
 
+        if not os.path.exists(migration_path):
+            continue
+
         with open(migration_path, "r", encoding="utf-8") as file:
             content = file.read()
 
@@ -180,10 +185,81 @@ def run_migrations():
         ]
 
         for batch in batches:
-            cursor.execute(batch)
+            try:
+                cursor.execute(batch)
+            except Exception as ex:
+                print(f"Migration note ({filename}): {ex}")
 
     cursor.close()
     conn.close()
+
+
+def seed_flats():
+    from app.services.flat_service import seed_all_flats
+
+    result = seed_all_flats()
+    print(result["message"])
+
+
+def seed_sample_data():
+    conn = get_app_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM Residents")
+    if cursor.fetchone()[0] > 0:
+        conn.close()
+        return
+
+    cursor.execute(
+        """
+        SELECT TOP 3 FlatID, TowerName, FlatNumber
+        FROM Flats
+        ORDER BY FlatID
+        """
+    )
+    flats = cursor.fetchall()
+
+    if len(flats) < 3:
+        conn.close()
+        return
+
+    sample_residents = [
+        ("Ramesh Kumar", "9876543210", "ramesh@example.com", flats[0], 1, "President"),
+        ("Priya Sharma", "9876543211", "priya@example.com", flats[1], 1, "Treasurer"),
+        ("Amit Patel", "9876543212", None, flats[2], 0, None),
+    ]
+
+    for name, phone, email, flat_row, is_owner, committee in sample_residents:
+        flat_id, tower, flat_num = flat_row
+        cursor.execute(
+            """
+            INSERT INTO Residents
+            (FullName, FlatNumber, PhoneNumber, Email, TowerName, IsOwner, CommitteeRole, FlatID)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (name, flat_num, phone, email, tower, is_owner, committee, flat_id)
+        )
+        cursor.execute(
+            "UPDATE Flats SET IsOccupied = 1 WHERE FlatID = ?",
+            (flat_id,)
+        )
+
+    cursor.execute(
+        """
+        INSERT INTO Notices (Title, Description, CreatedBy)
+        SELECT
+            'Welcome to Society Management',
+            'Use this portal to manage residents, visitors, complaints, and finances.',
+            UserID
+        FROM Users
+        WHERE Email = ?
+        """,
+        DEFAULT_ADMIN["email"]
+    )
+
+    conn.commit()
+    conn.close()
+    print("Sample residents and welcome notice added.")
 
 
 def seed_resident_login():
@@ -204,12 +280,12 @@ def seed_resident_login():
     resident_id, full_name, email, phone = resident
 
     cursor.execute(
-        "SELECT UserID FROM Users WHERE Email = ? OR ResidentID = ?",
-        email, resident_id
+        "SELECT UserID FROM Users WHERE PhoneNumber = ? OR ResidentID = ?",
+        phone, resident_id
     )
 
     if cursor.fetchone():
-        print(f"Resident login already exists for: {email}")
+        print(f"Resident login already exists for: {phone}")
         conn.close()
         return
 
@@ -231,54 +307,18 @@ def seed_resident_login():
     conn.close()
 
     print("Default resident login created:")
-    print(f"  Email:    {email}")
-    print(f"  Password: Resident@123")
-
-
-def seed_sample_data():
-    conn = get_app_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT COUNT(*) FROM Residents")
-    if cursor.fetchone()[0] > 0:
-        conn.close()
-        return
-
-    cursor.execute(
-        """
-        INSERT INTO Residents
-        (FullName, FlatNumber, PhoneNumber, Email, TowerName, IsOwner)
-        VALUES
-        ('Ramesh Kumar', 'A-101', '9876543210', 'ramesh@example.com', 'Tower A', 1),
-        ('Priya Sharma', 'B-202', '9876543211', 'priya@example.com', 'Tower B', 1),
-        ('Amit Patel', 'C-303', '9876543212', 'amit@example.com', 'Tower C', 0)
-        """
-    )
-
-    cursor.execute(
-        """
-        INSERT INTO Notices (Title, Description, CreatedBy)
-        SELECT
-            'Welcome to Society Management',
-            'Use this portal to manage residents, visitors, complaints, and finances.',
-            UserID
-        FROM Users
-        WHERE Email = ?
-        """,
-        DEFAULT_ADMIN["email"]
-    )
-
-    conn.commit()
-    conn.close()
-    print("Sample residents and welcome notice added.")
+    print(f"  Mobile:   {phone}")
+    print(f"  Password: Resident@123 (use flat-based password after secretary creates logins)")
 
 
 if __name__ == "__main__":
     print("Setting up SocietyManagement database...")
     run_schema()
     run_migrations()
+    seed_flats()
     seed_admin()
     seed_security()
     seed_sample_data()
     seed_resident_login()
     print("Database setup complete.")
+    print("Admin creates Secretary via POST /admin/secretary (default password: {APARTMENT}Sec)")
