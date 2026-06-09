@@ -1,0 +1,10 @@
+# Quick local development - run both servers (open two terminals instead for reload)
+Write-Host "Run these in separate terminals:"
+Write-Host ""
+Write-Host "Terminal 1 (API):"
+Write-Host "  cd backend"
+Write-Host "  .\venv\Scripts\uvicorn.exe app.main:app --reload --port 8000"
+Write-Host ""
+Write-Host "Terminal 2 (Frontend):"
+Write-Host "  cd frontend"
+Write-Host "  npm start"
